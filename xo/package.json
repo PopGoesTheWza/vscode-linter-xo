@@ -29,6 +29,7 @@
         "onLanguage:javascriptreact",
         "onLanguage:typescript",
         "onLanguage:typescriptreact",
+        "onLanguage:vue",
         "onCommand:xo.fix"
     ],
     "main": "./out/extension",

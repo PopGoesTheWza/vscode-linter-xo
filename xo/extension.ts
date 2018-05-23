@@ -26,7 +26,7 @@ namespace AllFixesRequest {
 	export const type = new RequestType<AllFixesParams, AllFixesResult, void, void>('textDocument/xo/allFixes');
 }
 
-const defaultLanguages = ['javascript', 'javascriptreact', 'typescript', 'typescriptreact'];
+const defaultLanguages = ['javascript', 'javascriptreact', 'typescript', 'typescriptreact', 'vue'];
 
 class XOEditProivder implements DocumentFormattingEditProvider {
 	constructor(private _client: LanguageClient) { }
