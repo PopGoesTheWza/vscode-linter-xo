@@ -3,6 +3,7 @@ import {assert} from 'chai';
 import * as td from 'testdouble';
 import * as _ from 'lodash';
 import ActivationManager, { ActivationManagerDelegate } from './activation-manager';
+import { ExtensionContext } from 'vscode';
 
 class MockConfiguration {
 	values: {[key: string]: any} = {};
@@ -16,9 +17,10 @@ describe('ActivationManager', () => {
 	let manager: ActivationManager;
 	let delegate: ActivationManagerDelegate;
 	let config: MockConfiguration;
+	const context: ExtensionContext = {} as any;
 
 	beforeEach(() => {
-		delegate = td.object(['getDocuments', 'getConfiguration', 'activate', 'deactivate']);
+		delegate = td.object(['getDocuments', 'getConfiguration', 'activate', 'deactivate', 'handleCommand', 'showInformationMessage']);
 		manager = new ActivationManager(delegate);
 		config = new MockConfiguration();
 
@@ -33,20 +35,21 @@ describe('ActivationManager', () => {
 		it('should not activate', () => {
 			td.when(delegate.getDocuments()).thenReturn([{uri: {}, languageId: 'javascript'}]);
 
-			manager.activate();
+			manager.activate(context);
 
 			assert.equal(td.explain(delegate.activate).callCount, 0);
 		});
 
 		it('shoule activate on when xo.enable changed', () => {
 			td.when(delegate.getDocuments()).thenReturn([{uri: {}, languageId: 'javascript'}]);
-			manager.activate();
+			manager.activate(context);
 
 			assert.equal(td.explain(delegate.activate).callCount, 0);
 
 			config.values.enable = true;
 			manager.didChangeConfiguration();
 
+			td.verify(delegate.activate(context));
 			assert.equal(td.explain(delegate.activate).callCount, 1);
 		});
 	});
@@ -59,9 +62,9 @@ describe('ActivationManager', () => {
 		it('should activate for javascript', () => {
 			td.when(delegate.getDocuments()).thenReturn([{uri: {}, languageId: 'javascript'}]);
 
-			manager.activate();
+			manager.activate(context);
 
-			td.verify(delegate.activate());
+			td.verify(delegate.activate(context));
 		});
 
 		it('should activate for language in xo.validate ', () => {
@@ -69,15 +72,15 @@ describe('ActivationManager', () => {
 
 			td.when(delegate.getDocuments()).thenReturn([{uri: {}, languageId: 'typescript'}]);
 
-			manager.activate();
+			manager.activate(context);
 
-			td.verify(delegate.activate());
+			td.verify(delegate.activate(context));
 		});
 
 		it('should not activate for non default language with default validate values', () => {
 			td.when(delegate.getDocuments()).thenReturn([{uri: {}, languageId: 'vue'}]);
 
-			manager.activate();
+			manager.activate(context);
 
 			assert.equal(td.explain(delegate.activate).callCount, 0);
 		});
@@ -87,7 +90,7 @@ describe('ActivationManager', () => {
 
 			td.when(delegate.getDocuments()).thenReturn([{uri: {}, languageId: 'javacript'}]);
 
-			manager.activate();
+			manager.activate(context);
 
 			assert.equal(td.explain(delegate.activate).callCount, 0);
 		});
@@ -95,7 +98,7 @@ describe('ActivationManager', () => {
 		it('should activate when xo.validate changed', () => {
 			td.when(delegate.getDocuments()).thenReturn([{uri: {}, languageId: 'vue'}]);
 
-			manager.activate();
+			manager.activate(context);
 
 			assert.equal(td.explain(delegate.activate).callCount, 0);
 
@@ -103,26 +106,29 @@ describe('ActivationManager', () => {
 
 			manager.didChangeConfiguration();
 
+			td.verify(delegate.activate(context));
 			assert.equal(td.explain(delegate.activate).callCount, 1);
 		});
 
 		it('should active when new document opened', () => {
 			td.when(delegate.getDocuments()).thenReturn([{uri: {}, languageId: 'vue'}]);
 
-			manager.activate();
+			manager.activate(context);
 
 			assert.equal(td.explain(delegate.activate).callCount, 0);
 
 			manager.didOpenTextDocument({uri: {}, languageId: 'javascript'} as any);
 
+			td.verify(delegate.activate(context));
 			assert.equal(td.explain(delegate.activate).callCount, 1);
 		});
 
 		it('should not activate twice', () => {
 			td.when(delegate.getDocuments()).thenReturn([{uri: {}, languageId: 'javascript'}]);
 
-			manager.activate();
+			manager.activate(context);
 
+			td.verify(delegate.activate(context));
 			assert.equal(td.explain(delegate.activate).callCount, 1);
 
 			manager.didChangeConfiguration();
@@ -132,6 +138,29 @@ describe('ActivationManager', () => {
 			manager.didOpenTextDocument({uri: {}, languageId: 'javascript'} as any);
 
 			assert.equal(td.explain(delegate.activate).callCount, 1);
+		});
+
+		describe('with command', () => {
+			let command: () => void;
+
+			beforeEach(() => {
+				command = manager.createCommandHandler('test.command')
+			});
+
+			it('should forward command if activated', () => {
+				td.when(delegate.getDocuments()).thenReturn([{uri: {}, languageId: 'javascript'}]);
+				manager.activate(context);
+
+				command();
+				td.verify(delegate.handleCommand('test.command'));
+			});
+
+			it('should not forward command if not activated', () => {
+				command();
+
+				assert.equal(td.explain(delegate.handleCommand).callCount, 0);
+				td.verify(delegate.showInformationMessage(td.matchers.isA(String)))
+			});
 		});
 	});
 });
