@@ -1,0 +1,105 @@
+{
+  "name": "linter-xo-2",
+  "displayName": "Linter XO",
+  "description": "Integrates XO linter into VS Code.",
+  "version": "3.0.0",
+  "author": {
+    "name": "Bryan Chen",
+    "url": "https://github.com/xlc"
+  },
+  "license": "MIT",
+  "repository": "github:xlc/vscode-linter-xo",
+  "bugs": {
+    "url": "https://github.com/xlc/vscode-linter-xo/issues"
+  },
+  "publisher": "bryan-chen",
+  "categories": [
+    "Linters",
+    "Formatters"
+  ],
+  "engines": {
+    "vscode": "^1.22.0"
+  },
+  "activationEvents": [
+    "*"
+  ],
+  "main": "./client/out/extension",
+  "contributes": {
+    "configuration": {
+      "type": "object",
+      "title": "XO configuration",
+      "properties": {
+        "xo.enable": {
+          "scope": "resource",
+          "type": "boolean",
+          "default": true,
+          "description": "Controls whether xo is enabled or not."
+        },
+        "xo.options": {
+          "scope": "resource",
+          "type": "object",
+          "default": {},
+          "description": "The xo options object to provide args to the xo command."
+        },
+        "xo.trace.server": {
+          "scope": "window",
+          "type": "string",
+          "enum": [
+            "off",
+            "messages",
+            "verbose"
+          ],
+          "default": "off",
+          "description": "Traces the communication between VSCode and the xo linter service."
+        },
+        "xo.format.enable": {
+          "scope": "resource",
+          "type": "boolean",
+          "default": false,
+          "description": "Enable 'xo --fix' as a formatter"
+        },
+        "xo.validate": {
+          "scope": "resource",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "javascript",
+            "javascriptreact"
+          ],
+          "description": "An array of language ids which should be validated by XO"
+        }
+      }
+    },
+    "commands": [
+      {
+        "title": "Fix all auto-fixable problems",
+        "category": "XO",
+        "command": "xo.fix"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "cd client && yarn run update-vscode && cd .. && yarn run compile",
+    "compile:client": "tsc -p ./client/tsconfig.json",
+    "compile:server": "tsc -p ./server/tsconfig.json",
+    "watch:client": "tsc -w -p ./client/tsconfig.json",
+    "watch:server": "tsc -w -p ./server/tsconfig.json",
+    "compile": "yarn run compile:client && yarn run compile:server",
+    "postinstall": "cd client && yarn && cd ../server && yarn && cd ..",
+    "test": "mocha -r ts-node/register client/src/**/*.spec.ts server/src/**/*.spec.ts",
+    "watch:test": "mocha --watch --watch-extensions ts -r ts-node/register client/src/**/*.spec.ts server/src/**/*.spec.ts"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.1.3",
+    "@types/lodash": "^4.14.109",
+    "@types/mocha": "^5.2.0",
+    "chai": "^4.1.2",
+    "lodash": "^4.17.10",
+    "mocha": "^5.2.0",
+    "testdouble": "^3.8.1",
+    "ts-node": "^6.0.5",
+    "typescript": "^2.8.3"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "linter-xo-2-server",
+  "description": "Integrates XO linter into VS Code.",
+  "version": "3.0.0",
+  "author": {
+    "name": "Bryan Chen",
+    "url": "https://github.com/xlc"
+  },
+  "license": "MIT",
+  "repository": "github:xlc/vscode-linter-xo",
+  "bugs": {
+    "url": "https://github.com/xlc/vscode-linter-xo/issues"
+  },
+  "engines": {
+    "node": "*"
+  },
+  "devDependencies": {
+    "vscode": "^1.1.17"
+  },
+  "dependencies": {
+    "vscode-languageserver": "^4.1.3"
+  }
+}

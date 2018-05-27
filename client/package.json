@@ -1,0 +1,27 @@
+{
+  "name": "linter-xo-2-client",
+  "description": "Integrates XO linter into VS Code.",
+  "version": "3.0.0",
+  "author": {
+    "name": "Bryan Chen",
+    "url": "https://github.com/xlc"
+  },
+  "license": "MIT",
+  "repository": "github:xlc/vscode-linter-xo",
+  "bugs": {
+    "url": "https://github.com/xlc/vscode-linter-xo/issues"
+  },
+  "engines": {
+    "vscode": "^1.22.0"
+  },
+  "scripts": {
+    "update-vscode": "node ./node_modules/vscode/bin/install",
+    "postinstall": "node ./node_modules/vscode/bin/install"
+  },
+  "devDependencies": {
+    "vscode": "^1.1.17"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^4.1.4"
+  }
+}
