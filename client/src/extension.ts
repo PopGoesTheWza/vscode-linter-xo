@@ -22,15 +22,13 @@ const activationManager = new ActivationManager({
 			configurationListener.dispose();
 			configurationListener = undefined;
 		}
-		linterClient = new LinterClient();
+		linterClient = new LinterClient(context);
 	},
 	deactivate(): void {
 		linterClient!.dispose();
 	},
 	handleCommand(command: string) {
-		switch (command) {
-
-		}
+		linterClient!.handleCommand(command);
 	},
 	showInformationMessage(message: string) {
 		window.showInformationMessage(message)

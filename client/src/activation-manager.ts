@@ -65,6 +65,7 @@ export default class ActivationManager {
 		if (!config.get('enable', true)) {
 			return false;
 		}
+		// TODO: check fo xo in package.json
 		let validate = config.get<string[]>('validate', defaultLanguages);
 		for (let item of validate) {
 			if (item === doc.languageId) {
