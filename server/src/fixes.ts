@@ -1,8 +1,7 @@
 import { Diagnostic } from 'vscode-languageserver';
-import { Map } from './map';
 import { computeKey } from './utils';
 
-interface ESLintAutoFixEdit {
+export interface ESLintAutoFixEdit {
 	range: [number, number];
 	text: string;
 }
@@ -23,33 +22,30 @@ export interface AutoFix {
 	edit: ESLintAutoFixEdit;
 }
 
-/**
- * Credits to vscode-eslint (https://github.com/Microsoft/vscode-eslint)
- */
-export class Fixes {
-	private keys: string[];
-
-	constructor (private edits: Map<AutoFix>) {
-		this.keys = Object.keys(edits);
+export default class Fixes {
+	constructor (private edits: Map<string, AutoFix>) {
 	}
 
-	public static overlaps(lastEdit: AutoFix, newEdit: AutoFix): boolean {
-		return !!lastEdit && lastEdit.edit.range[1] > newEdit.edit.range[0];
+	public static overlaps(lastEdit: AutoFix | undefined, newEdit: AutoFix): boolean {
+		return lastEdit !== undefined && lastEdit.edit.range[1] > newEdit.edit.range[0];
 	}
 
 	public isEmpty(): boolean {
-		return this.keys.length === 0;
+		return this.edits.size === 0;
 	}
 
 	public getDocumentVersion(): number {
-		return this.edits[this.keys[0]].documentVersion;
+		if (this.isEmpty()) {
+			throw new Error('No edits recorded.');
+		}
+		return this.edits.values().next().value.documentVersion;
 	}
 
 	public getScoped(diagnostics: Diagnostic[]): AutoFix[] {
 		let result: AutoFix[] = [];
 		for(let diagnostic of diagnostics) {
 			let key = computeKey(diagnostic);
-			let editInfo = this.edits[key];
+			let editInfo = this.edits.get(key);
 			if (editInfo) {
 				result.push(editInfo);
 			}
@@ -58,7 +54,8 @@ export class Fixes {
 	}
 
 	public getAllSorted(): AutoFix[] {
-		let result = this.keys.map(key => this.edits[key]);
+		let result: AutoFix[] = [];
+		this.edits.forEach((value) => result.push(value));
 		return result.sort((a, b) => {
 			let d = a.edit.range[0] - b.edit.range[0];
 			if (d !== 0) {

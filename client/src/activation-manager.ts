@@ -1,4 +1,5 @@
 import { TextDocument, WorkspaceConfiguration, Uri, ExtensionContext } from "vscode";
+import defaultLanguages from "./default-languages";
 
 export interface ActivationManagerDelegate {
 	getDocuments(): TextDocument[];
@@ -8,8 +9,6 @@ export interface ActivationManagerDelegate {
 	handleCommand(command: string): void;
 	showInformationMessage(message: string): void;
 }
-
-const defaultLanguages = ['javascript', 'javascriptreact'];
 
 export default class ActivationManager {
 	private isActivated = false;
@@ -65,7 +64,6 @@ export default class ActivationManager {
 		if (!config.get('enable', true)) {
 			return false;
 		}
-		// TODO: check fo xo in package.json
 		let validate = config.get<string[]>('validate', defaultLanguages);
 		for (let item of validate) {
 			if (item === doc.languageId) {

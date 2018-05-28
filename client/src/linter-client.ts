@@ -4,6 +4,7 @@ import {
 	ServerOptions, TransportKind, LanguageClientOptions, RevealOutputChannelOn,
 	LanguageClient, VersionedTextDocumentIdentifier, ExecuteCommandParams, ExecuteCommandRequest
 } from 'vscode-languageclient';
+import defaultLanguages from './default-languages';
 
 export default class LinterClient implements Disposable {
 	private client: LanguageClient;
@@ -53,7 +54,7 @@ export default class LinterClient implements Disposable {
 			version: textEditor.document.version
 		};
 		let params: ExecuteCommandParams = {
-			command: 'xo.fix',
+			command: 'xo.applyAutoFix',
 			arguments: [textDocument]
 		}
 		this.client.sendRequest(ExecuteCommandRequest.type, params).then(undefined, () => {

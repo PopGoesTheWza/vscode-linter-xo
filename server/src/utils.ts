@@ -1,4 +1,7 @@
 import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
+import { existsSync, readFileSync } from 'fs';
+import * as path from 'path';
+import pathIsInside from 'path-is-inside';
 
 function parseSeverity(severity: number): DiagnosticSeverity {
 	switch (severity) {
@@ -31,4 +34,31 @@ export function makeDiagnostic(problem: any): Diagnostic {
 export function computeKey(diagnostic: Diagnostic): string {
 	const range = diagnostic.range;
 	return `[${range.start.line},${range.start.character},${range.end.line},${range.end.character}]-${diagnostic.code}`;
+}
+
+export function findPackageJson(filePath: string, roots: string[]): string | null {
+	let valid = false;
+	for (const root of roots) {
+		if (pathIsInside(filePath, root)) {
+			valid = true;
+			break;
+		}
+	}
+	if (!valid) {
+		return null;
+	}
+	const dir = path.dirname(filePath);
+	const packageJsonPath = path.join(dir, 'package.json');
+	if (existsSync(packageJsonPath)) {
+		return packageJsonPath;
+	}
+	return findPackageJson(dir, roots);
+}
+
+export function loadJson(filePath: string): any | null {
+	try {
+		return JSON.parse(readFileSync(filePath, 'utf8'));
+	} catch (err) {
+		return null;
+	}
 }
