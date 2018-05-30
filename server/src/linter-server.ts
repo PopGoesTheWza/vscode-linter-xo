@@ -1,7 +1,7 @@
 import {
 	IConnection, TextDocumentSyncKind,
 	DidChangeConfigurationNotification, DidChangeWorkspaceFoldersNotification,
-	TextDocuments, NotificationType, TextDocument, Files, DidChangeWatchedFilesNotification, Diagnostic, VersionedTextDocumentIdentifier, TextEdit, Range, ExecuteCommandRequest, CodeActionRequest, WorkspaceChange, Command, DocumentFormattingRequest
+	TextDocuments, NotificationType, TextDocument, Files, DidChangeWatchedFilesNotification, Diagnostic, VersionedTextDocumentIdentifier, TextEdit, Range, ExecuteCommandRequest, CodeActionRequest, WorkspaceChange, Command, DocumentFormattingRequest, DidOpenTextDocumentNotification, DidChangeTextDocumentNotification, BulkRegistration, DidCloseTextDocumentNotification, WillSaveTextDocumentNotification, WillSaveTextDocumentWaitUntilRequest, DidSaveTextDocumentNotification
 } from 'vscode-languageserver';
 import URI from 'vscode-uri';
 
@@ -55,6 +55,8 @@ export default class LinterServer {
 	constructor(private connection: IConnection) {
 		this.messageQueue = new BufferedMessageQueue(this.connection);
 
+		this.documents.listen(this.connection);
+
 		this.documents.onDidChangeContent(event => {
 			this.messageQueue.addNotificationMessage(Notifications.validate, event.document, event.document.version);
 		});
@@ -87,8 +89,14 @@ export default class LinterServer {
 		});
 
 		this.connection.onInitialized(() => {
-			connection.client.register(DidChangeConfigurationNotification.type, undefined);
-			connection.client.register(DidChangeWorkspaceFoldersNotification.type, undefined);
+			const registration = BulkRegistration.create();
+			registration.add(DidChangeConfigurationNotification.type, null);
+			registration.add(DidChangeWorkspaceFoldersNotification.type, null);
+			registration.add(DidOpenTextDocumentNotification.type, null);
+			registration.add(DidChangeTextDocumentNotification.type, null);
+			registration.add(DidCloseTextDocumentNotification.type, null);
+			registration.add(DidSaveTextDocumentNotification.type, null);
+			connection.client.register(registration);
 		})
 
 		this.messageQueue.registerNotification(DidChangeConfigurationNotification.type, () => {
@@ -238,20 +246,19 @@ export default class LinterServer {
 				  return this.computeAllFixes(textDocument);
 			});
 		});
-
-		this.documents.listen(this.connection);
 	}
 
 	private updateDocumentSettings() {
 		this.documentSettings.clear();
-
+		this.log('clear document settings');
 		this.validateMany(this.documents.all());
 	}
 
 	private resolveSettings(doc: TextDocument): Thenable<TextDocumentSettings> {
 		let promise = this.documentSettings.get(doc.uri);
 		if (!promise) {
-			promise = this.connection.workspace.getConfiguration({ scopeUri: doc.uri, section: 'xo'}).then((settings: TextDocumentSettings) => {
+			promise = this.connection.workspace.getConfiguration({ scopeUri: doc.uri, section: 'xo'})
+			.then((settings: TextDocumentSettings) => {
 				if (!settings.enable) {
 					return settings;
 				}
@@ -271,11 +278,11 @@ export default class LinterServer {
 				return this.connection.workspace.getWorkspaceFolders()
 				.then(folders => {
 					if (folders) {
-						return folders.map(folder => folder.uri)
+						return folders.map(folder => URI.parse(folder.uri).fsPath)
 					}
 					return []
 				})
-				.then(folderPaths => findPackageJson(doc.uri, folderPaths))
+				.then(folderPaths => findPackageJson(uri.fsPath, folderPaths))
 				.then(packageJsonPath => {
 					if (packageJsonPath === null) {
 						this.error('Unable to locate package.json file for document: ' + doc.uri);
@@ -307,9 +314,10 @@ export default class LinterServer {
 								this.error(`The XO library doesn't export a lintText method. Path: ${path}`);
 								return settings;
 							} else {
-								this.info(`XO library loaded. Path: ${path}`);
+								this.log(`XO library loaded. Path: ${path}`);
 								settings.library = lib;
 							}
+							this.cachedModules.set(path, lib);
 						}
 						settings.library = lib;
 						return settings;
@@ -417,11 +425,15 @@ export default class LinterServer {
 		this.connection.tracer.log(message, verbose);
 	}
 
-	private error(message: string) {
-		this.connection.console.error(message)
+	private error(...messages: string[]) {
+		this.connection.console.error(messages.join(', '));
 	}
 
-	private info(message: string) {
-		this.connection.console.error(message)
+	private info(...messages: string[]) {
+		this.connection.console.info(messages.join(', '));
+	}
+
+	private log(...messages: string[]) {
+		this.connection.console.log(messages.join(', '));
 	}
 }

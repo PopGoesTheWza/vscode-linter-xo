@@ -1,3 +1,4 @@
 declare module 'path-is-inside' {
-	export default function pathIsInside(thePath: string, potentialParent: string): boolean;
+	function pathIsInside(thePath: string, potentialParent: string): boolean;
+	export = pathIsInside;
 }

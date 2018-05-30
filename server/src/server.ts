@@ -5,4 +5,8 @@ const connection = createConnection();
 
 new LinterServer(connection);
 
+process.on('uncaughtException', evt => {
+	connection.console.error(evt.message);
+});
+
 connection.listen()

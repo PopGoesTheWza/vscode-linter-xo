@@ -38,12 +38,14 @@ const activationManager = new ActivationManager({
 export function activate(context: ExtensionContext) {
 	activationManager.activate(context);
 
-	openListener = workspace.onDidOpenTextDocument(doc => {
-		activationManager.didOpenTextDocument(doc);
-	});
-	configurationListener = workspace.onDidChangeConfiguration(_evt => {
-		activationManager.didChangeConfiguration();
-	});
+	if (!activationManager.isActivated) {
+		openListener = workspace.onDidOpenTextDocument(doc => {
+			activationManager.didOpenTextDocument(doc);
+		});
+		configurationListener = workspace.onDidChangeConfiguration(_evt => {
+			activationManager.didChangeConfiguration();
+		});
+	}
 
 	const registerCommand = (command: string) =>
 		commands.registerCommand(command, activationManager.createCommandHandler(command));

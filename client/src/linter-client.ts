@@ -4,19 +4,31 @@ import {
 	ServerOptions, TransportKind, LanguageClientOptions, RevealOutputChannelOn,
 	LanguageClient, VersionedTextDocumentIdentifier, ExecuteCommandParams, ExecuteCommandRequest
 } from 'vscode-languageclient';
-import defaultLanguages from './default-languages';
 
 export default class LinterClient implements Disposable {
 	private client: LanguageClient;
 
 	constructor(private context: ExtensionContext) {
-		const serverModule = context.asAbsolutePath(path.join('server', 'out', 'eslintServer.js'));
+		const serverModule = context.asAbsolutePath(path.join('server', 'out', 'server.js'));
 		const serverOptions: ServerOptions = {
-			run: { module: serverModule, transport: TransportKind.ipc, options: { cwd: process.cwd() } },
-			debug: { module: serverModule, transport: TransportKind.ipc, options: { execArgv: ["--nolazy", "--inspect=6010"], cwd: process.cwd() } }
+			run: {
+				module: serverModule,
+				transport: TransportKind.ipc,
+				options: {
+					cwd: process.cwd()
+				}
+			},
+			debug: {
+				module: serverModule,
+				transport: TransportKind.ipc,
+				options: {
+					execArgv: ['--nolazy', '--inspect=6010'],
+					cwd: process.cwd()
+				}
+			}
 		};
 		const clientOptions: LanguageClientOptions = {
-			documentSelector: [{ scheme: 'file' }, { scheme: 'untitled'}],
+			documentSelector: [{ scheme: 'file' }],
 			diagnosticCollectionName: 'xo',
 			revealOutputChannelOn: RevealOutputChannelOn.Never,
 			synchronize: {

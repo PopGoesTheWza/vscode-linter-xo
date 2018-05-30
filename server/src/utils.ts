@@ -1,7 +1,7 @@
 import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
 import { existsSync, readFileSync } from 'fs';
 import * as path from 'path';
-import pathIsInside from 'path-is-inside';
+import pathIsInside = require('path-is-inside');
 
 function parseSeverity(severity: number): DiagnosticSeverity {
 	switch (severity) {

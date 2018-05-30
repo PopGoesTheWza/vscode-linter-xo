@@ -11,7 +11,7 @@ export interface ActivationManagerDelegate {
 }
 
 export default class ActivationManager {
-	private isActivated = false;
+	private activated = false;
 	private context: ExtensionContext | undefined;
 
 	constructor(private delegate: ActivationManagerDelegate) {}
@@ -22,9 +22,9 @@ export default class ActivationManager {
 	}
 
 	public deactivate() {
-		if (this.isActivated) {
+		if (this.activated) {
 			this.deactivate();
-			this.isActivated = false;
+			this.activated = false;
 		}
 	}
 
@@ -46,13 +46,17 @@ export default class ActivationManager {
 		};
 	}
 
+	public get isActivated(): boolean {
+		return this.activated;
+	}
+
 	private activateIfNeeded(docs: TextDocument[]) {
 		if (this.isActivated) {
 			return;
 		}
 		for (const doc of docs) {
 			if (this.shouldBeValidated(doc)) {
-				this.isActivated = true;
+				this.activated = true;
 				this.delegate.activate(this.context!);
 				return;
 			}
