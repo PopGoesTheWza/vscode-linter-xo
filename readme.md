@@ -1,5 +1,7 @@
 # linter-xo-2
 
+[![Build Status](https://travis-ci.org/xlc/vscode-linter-xo.svg?branch=master)](https://travis-ci.org/xlc/vscode-linter-xo)
+
 > Linter for [XO](https://github.com/sindresorhus/xo)
 
 This is originally fork of [linter-xo](https://github.com/SamVerschueren/vscode-linter-xo) but I have rewrite almost everything.
