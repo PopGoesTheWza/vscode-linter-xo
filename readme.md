@@ -42,9 +42,9 @@ This extension contributes the following variables to the settings:
 }
 ```
 - `xo.validate`: An array of language identifiers specify the files to be validated. It defaults to `["javascript", "javascriptreact"]`
-	- To enable XO for TypeScript use `"xo.validate": [ "javascript", "javascriptreact", "typescript", "typescriptreact" ]`
-	- To enable XO for Vue.js use `"xo.validate": [ "javascript", "javascriptreact", "vue" ]`
-`xo.format.enable`: Enable/Disable XO formatter integration which uses `xo --fix` as formatter. Requires `xo.enable` to be true. It is disabled by default.
+	- To enable XO for TypeScript use `"[ "javascript", "javascriptreact", "typescript", "typescriptreact" ]`
+	- To enable XO for Vue.js use `[ "javascript", "javascriptreact", "vue" ]`
+- `xo.format.enable`: Enable/Disable XO formatter integration which uses `xo --fix` as formatter. Requires `xo.enable` to be true. It is disabled by default.
 
 ## License
 
