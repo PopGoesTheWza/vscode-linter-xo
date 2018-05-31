@@ -22,7 +22,7 @@ Simply search for the `linter-xo-2` extension from the list and install it.
 
 Press `F1` and choose `XO: Fix all auto-fixable problems`
 
-![](https://github.com/xlc/vscode-linter-xo/raw/master/xo/media/fix.gif)
+![](https://github.com/xlc/vscode-linter-xo/raw/master/media/fix.gif)
 
 > Tip: Bind a keyboard shortcut to `xo.fix`
 
