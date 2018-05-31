@@ -46,6 +46,11 @@ This extension contributes the following variables to the settings:
 	- To enable XO for Vue.js use `[ "javascript", "javascriptreact", "vue" ]`
 - `xo.format.enable`: Enable/Disable XO formatter integration which uses `xo --fix` as formatter. Requires `xo.enable` to be true. It is disabled by default.
 
+## TODOs
+
+- New Code Action: Disable rule on this line
+- Run auto fix multiple times until all issus are fixed
+
 ## License
 
 [MIT](https://github.com/xlc/vscode-linter-xo/blob/master/license)
