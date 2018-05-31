@@ -2,11 +2,11 @@
 
 > Linter for [XO](https://github.com/sindresorhus/xo)
 
-This is fork of [linter-xo](https://github.com/SamVerschueren/vscode-linter-xo) which includes all my latest changes.
+This is originally fork of [linter-xo](https://github.com/SamVerschueren/vscode-linter-xo) but I have rewrite almost everything.
 
 ## Usage
 
-Install [XO](https://github.com/sindresorhus/xo) in your workspace folder.
+This extension requires XO to be install [XO](https://github.com/sindresorhus/xo) to be installed as a dependency or dev dependency.
 
 ```
 $ npm install --save-dev xo
@@ -14,62 +14,38 @@ $ npm install --save-dev xo
 
 In Visual Studio Code, press <kbd>F1</kbd> and narrow down the list of commands by typing `extension`. Pick `Extensions: Install Extension`.
 
-![](https://github.com/SamVerschueren/vscode-linter-xo/raw/master/screenshot.png)
+![](https://github.com/xlc/vscode-linter-xo/raw/master/media/screenshot.png)
 
-Simply search for the `linter-xo` extension from the list and install it.
-
+Simply search for the `linter-xo-2` extension from the list and install it.
 
 ## Fix issues
 
 Press `F1` and choose `XO: Fix all auto-fixable problems`
 
-![](https://github.com/SamVerschueren/vscode-linter-xo/raw/master/xo/media/fix.gif)
+![](https://github.com/xlc/vscode-linter-xo/raw/master/xo/media/fix.gif)
 
 > Tip: Bind a keyboard shortcut to `xo.fix`
 
 
-## Settings
+## Settings Options
 
-Enable the linter in the VS Code Settings.
+This extension contributes the following variables to the settings:
 
-```json
-{
-  "xo.enable": true
-}
-```
-
-You can also pass in extra options via the settings file.
+- `xo.enable`: Enable/Disable XO. It is enabled by default.
+- `xo.options`: Extra options that will be passed to XO. Default to empty object. An example to disable semi colon is:
 
 ```json
 {
-  "xo.enable": true,
   "xo.options": {
     "semicolon": false
   }
 }
 ```
-
-Or via the `package.json` file.
-
-```json
-{
-  "name": "my-pkg",
-  "xo": {
-    "semicolon": false
-  }
-}
-```
-
-You can enable the formatter integration to use `xo --fix` as formatter. Requires `xo.enable` to be true. It is disabled by default.
-
-```json
-{
-  "xo.enable": true,
-  "xo.format.enable": true
-}
-```
-
+- `xo.validate`: An array of language identifiers specify the files to be validated. It defaults to `["javascript", "javascriptreact"]`
+	- To enable XO for TypeScript use `"xo.validate": [ "javascript", "javascriptreact", "typescript", "typescriptreact" ]`
+	- To enable XO for Vue.js use `"xo.validate": [ "javascript", "javascriptreact", "vue" ]`
+`xo.format.enable`: Enable/Disable XO formatter integration which uses `xo --fix` as formatter. Requires `xo.enable` to be true. It is disabled by default.
 
 ## License
 
-MIT © [Sam Verschueren](http://github.com/SamVerschueren)
+[MIT](https://github.com/xlc/vscode-linter-xo/blob/master/license)
