@@ -4,8 +4,6 @@
 
 > Linter for [XO](https://github.com/sindresorhus/xo)
 
-This is originally fork of [linter-xo](https://github.com/SamVerschueren/vscode-linter-xo) but I have rewrite almost everything.
-
 ## Usage
 
 This extension requires XO to be install [XO](https://github.com/sindresorhus/xo) to be installed as a dependency or dev dependency.
@@ -52,6 +50,12 @@ This extension contributes the following variables to the settings:
 
 - New Code Action: Disable rule on this line
 - Run auto fix multiple times until all issus are fixed
+
+## Credits
+
+This is originally fork of [linter-xo](https://github.com/SamVerschueren/vscode-linter-xo) by [SamVerschueren](https://github.com/SamVerschueren)
+
+The new code is heavily inspired by [vscode-eslint](https://github.com/Microsoft/vscode-eslint)
 
 ## License
 
