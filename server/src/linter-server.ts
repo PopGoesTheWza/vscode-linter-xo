@@ -305,6 +305,7 @@ export default class LinterServer {
 					}
 					settings.workspaceRoot = dirname(packageJsonPath);
 					const dir = dirname(uri.fsPath);
+					process.chdir(settings.workspaceRoot);
 					return Files.resolve('xo', dirname(packageJsonPath), dir, tracer).then(path => {
 						let lib = this.cachedModules.get(path);
 						if (!lib) {

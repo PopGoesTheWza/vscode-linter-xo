@@ -13,17 +13,13 @@ export default class LinterClient implements Disposable {
 		const serverOptions: ServerOptions = {
 			run: {
 				module: serverModule,
-				transport: TransportKind.ipc,
-				options: {
-					cwd: process.cwd()
-				}
+				transport: TransportKind.ipc
 			},
 			debug: {
 				module: serverModule,
 				transport: TransportKind.ipc,
 				options: {
-					execArgv: ['--nolazy', '--inspect=6010'],
-					cwd: process.cwd()
+					execArgv: ['--nolazy', '--inspect=6010']
 				}
 			}
 		};
