@@ -372,13 +372,22 @@ export default class LinterServer {
 		// Clean previously computed code actions.
 		this.codeActions.delete(doc.uri);
 
-		const diagnostics: Diagnostic[] = report.results[0].messages.map((problem: any) => {
+		const diagnostics: Diagnostic[] = this.makeDiagnostics(doc, report);
+
+		this.connection.sendDiagnostics({ uri: doc.uri, diagnostics });
+	}
+
+	private makeDiagnostics(doc: TextDocument, report: any) {
+		const result = report && report.results && report.results[0];
+		const messages = result && result.messages;
+		if (!messages) {
+			return [];
+		}
+		return messages.map((problem: any) => {
 			const diagnostic = makeDiagnostic(problem);
 			this.recordCodeAction(doc, diagnostic, problem);
 			return diagnostic;
 		});
-
-		this.connection.sendDiagnostics({ uri: doc.uri, diagnostics });
 	}
 
 	private recordCodeAction(document: TextDocument, diagnostic: Diagnostic, problem: ESLintProblem): void {
