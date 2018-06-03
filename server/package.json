@@ -7,7 +7,7 @@
     "url": "https://github.com/xlc"
   },
   "license": "MIT",
-  "repository": "github:xlc/vscode-linter-xo",
+  "repository": "https://github.com/xlc/vscode-linter-xo",
   "bugs": {
     "url": "https://github.com/xlc/vscode-linter-xo/issues"
   },
