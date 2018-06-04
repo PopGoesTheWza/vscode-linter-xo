@@ -48,7 +48,9 @@ This extension contributes the following variables to the settings:
 
 ## TODOs
 
-- New Code Action: Disable rule on this line
+- Code Action: Disable rule on this line
+	- Currently doesn't support to disable multiple rules in a single line
+	- Need to detect a disable rule already present and adjust the fix for it
 - Run auto fix multiple times until all issus are fixed
 
 ## Credits
