@@ -1,20 +1,24 @@
 import {
 	IConnection, TextDocumentSyncKind,
 	DidChangeConfigurationNotification, DidChangeWorkspaceFoldersNotification,
-	TextDocuments, NotificationType, TextDocument, Files, DidChangeWatchedFilesNotification, Diagnostic, VersionedTextDocumentIdentifier, TextEdit, Range, ExecuteCommandRequest, CodeActionRequest, WorkspaceChange, Command, DocumentFormattingRequest, DidOpenTextDocumentNotification, DidChangeTextDocumentNotification, BulkRegistration, DidCloseTextDocumentNotification, WillSaveTextDocumentNotification, WillSaveTextDocumentWaitUntilRequest, DidSaveTextDocumentNotification
+	TextDocuments, NotificationType, TextDocument, Files, DidChangeWatchedFilesNotification, Diagnostic,
+	VersionedTextDocumentIdentifier, TextEdit, Range, ExecuteCommandRequest, CodeActionRequest, WorkspaceChange, Command,
+	DocumentFormattingRequest, DidOpenTextDocumentNotification, DidChangeTextDocumentNotification, BulkRegistration,
+	DidCloseTextDocumentNotification, DidSaveTextDocumentNotification, CodeActionParams
 } from 'vscode-languageserver';
 import URI from 'vscode-uri';
 
 import BufferedMessageQueue from './buffered-message-queue';
 import { findPackageJson, loadJson, makeDiagnostic, computeKey } from './utils';
 import { dirname } from 'path';
-import Fixes, { ESLintAutoFixEdit, ESLintProblem } from './fixes';
+import Fixes, { ESLintProblem, AutoFix } from './fixes';
 
 const enum CommandIds {
 	applySingleFix = 'xo.applySingleFix',
 	applySameFixes = 'xo.applySameFixes',
 	applyAllFixes = 'xo.applyAllFixes',
-	applyAutoFix = 'xo.applyAutoFix'
+	applyAutoFix = 'xo.applyAutoFix',
+	disableRuleThisLine = 'xo.disableRuleThisLine'
 }
 
 namespace Notifications {
@@ -34,13 +38,6 @@ interface TextDocumentSettings {
 	format: {
 		enable: boolean
 	} | undefined
-}
-
-interface AutoFix {
-	label: string;
-	documentVersion: number;
-	ruleId: string;
-	edit: ESLintAutoFixEdit;
 }
 
 export default class LinterServer {
@@ -82,7 +79,13 @@ export default class LinterServer {
 					codeActionProvider: true,
 					documentFormattingProvider: true,
 					executeCommandProvider: {
-						commands: [CommandIds.applySingleFix, CommandIds.applySameFixes, CommandIds.applyAllFixes, CommandIds.applyAutoFix]
+						commands: [
+							CommandIds.applySingleFix,
+							CommandIds.applySameFixes,
+							CommandIds.applyAllFixes,
+							CommandIds.applyAutoFix,
+							CommandIds.disableRuleThisLine
+						]
 					}
 				}
 			};
@@ -118,81 +121,8 @@ export default class LinterServer {
 
 		this.messageQueue.registerRequest(CodeActionRequest.type, params => {
 			this.codeActionCommands.clear();
-			const result: Command[] = [];
-			const uri = params.textDocument.uri;
-			const edits = this.codeActions.get(uri);
-			if (!edits) {
-				return result;
-			}
-
-			const fixes = new Fixes(edits);
-			if (fixes.isEmpty()) {
-				return result;
-			}
-
-			const textDocument = this.documents.get(uri);
-			let documentVersion: number = -1;
-			let ruleId: string = '';
-
-			if (!textDocument) {
-				return result;
-			}
-
-			const doc = textDocument;
-
-			function createTextEdit(editInfo: AutoFix): TextEdit {
-				return TextEdit.replace(Range.create(doc.positionAt(editInfo.edit.range[0]), doc.positionAt(editInfo.edit.range[1])), editInfo.edit.text || '');
-			}
-
-			function getLastEdit(array: AutoFix[]): AutoFix | undefined {
-				let length = array.length;
-				if (length === 0) {
-					return undefined;
-				}
-				return array[length - 1];
-			}
-
-			for (let editInfo of fixes.getScoped(params.context.diagnostics)) {
-				documentVersion = editInfo.documentVersion;
-				ruleId = editInfo.ruleId;
-				let workspaceChange = new WorkspaceChange();
-				workspaceChange.getTextEditChange({uri, version: documentVersion}).add(createTextEdit(editInfo));
-				this.codeActionCommands.set(CommandIds.applySingleFix, workspaceChange);
-				result.push(Command.create(editInfo.label, CommandIds.applySingleFix));
-			};
-
-			if (result.length > 0) {
-				let same: AutoFix[] = [];
-				let all: AutoFix[] = [];
-
-
-				for (let editInfo of fixes.getAllSorted()) {
-					if (documentVersion === -1) {
-						documentVersion = editInfo.documentVersion;
-					}
-					if (editInfo.ruleId === ruleId && !Fixes.overlaps(getLastEdit(same), editInfo)) {
-						same.push(editInfo);
-					}
-					if (!Fixes.overlaps(getLastEdit(all), editInfo)) {
-						all.push(editInfo);
-					}
-				}
-				if (same.length > 1) {
-					let sameFixes: WorkspaceChange = new WorkspaceChange();
-					let sameTextChange = sameFixes.getTextEditChange({uri, version: documentVersion});
-					same.map(createTextEdit).forEach(edit => sameTextChange.add(edit));
-					this.codeActionCommands.set(CommandIds.applySameFixes, sameFixes);
-					result.push(Command.create(`Fix all ${ruleId} problems`, CommandIds.applySameFixes));
-				}
-				if (all.length > 1) {
-					let allFixes: WorkspaceChange = new WorkspaceChange();
-					let allTextChange = allFixes.getTextEditChange({uri, version: documentVersion});
-					all.map(createTextEdit).forEach(edit => allTextChange.add(edit));
-					this.codeActionCommands.set(CommandIds.applyAllFixes, allFixes);
-					result.push(Command.create(`Fix all auto-fixable problems`, CommandIds.applyAllFixes));
-				}
-			}
-			return result;
+			const result = this.computeFixCommands(params);
+			return result.concat(this.computeDisableRuleCommands(params));
 		});
 
 		this.messageQueue.registerRequest(ExecuteCommandRequest.type, params => {
@@ -205,6 +135,21 @@ export default class LinterServer {
 						workspaceChange = new WorkspaceChange();
 						let textChange = workspaceChange.getTextEditChange(identifier);
 						edits.forEach(edit => textChange.add(edit));
+					}
+				}
+			} else if (params.command === CommandIds.disableRuleThisLine) {
+				if (params.arguments) {
+					workspaceChange = new WorkspaceChange();
+					const uri = params.arguments[0];
+					const diagnostic: Diagnostic = params.arguments[1];
+					const textChange = workspaceChange.getTextEditChange(uri);
+					const endPos = diagnostic.range.end;
+					endPos.line += 1;
+					endPos.character = 0;
+					const doc = this.documents.get(uri);
+					if (doc) {
+						const offset = doc.offsetAt(endPos) - 1;
+						textChange.add(TextEdit.insert(doc.positionAt(offset), ` // eslint-disable-line ${diagnostic.code}`));
 					}
 				}
 			} else {
@@ -429,6 +374,96 @@ export default class LinterServer {
 			}
 		}
 		return [];
+	}
+
+	private computeFixCommands(params: CodeActionParams): Command[] {
+		const result: Command[] = [];
+		const uri = params.textDocument.uri;
+		const edits = this.codeActions.get(uri);
+		if (!edits) {
+			return result;
+		}
+
+		const fixes = new Fixes(edits);
+		if (fixes.isEmpty()) {
+			return result;
+		}
+
+		const textDocument = this.documents.get(uri);
+		let documentVersion: number = -1;
+		let ruleId: string = '';
+
+		if (!textDocument) {
+			return result;
+		}
+
+		const doc = textDocument;
+
+		function createTextEdit(editInfo: AutoFix): TextEdit {
+			return TextEdit.replace(Range.create(doc.positionAt(editInfo.edit.range[0]), doc.positionAt(editInfo.edit.range[1])), editInfo.edit.text || '');
+		}
+
+		function getLastEdit(array: AutoFix[]): AutoFix | undefined {
+			let length = array.length;
+			if (length === 0) {
+				return undefined;
+			}
+			return array[length - 1];
+		}
+
+		for (let editInfo of fixes.getScoped(params.context.diagnostics)) {
+			documentVersion = editInfo.documentVersion;
+			ruleId = editInfo.ruleId;
+			let workspaceChange = new WorkspaceChange();
+			workspaceChange.getTextEditChange({uri, version: documentVersion}).add(createTextEdit(editInfo));
+			this.codeActionCommands.set(CommandIds.applySingleFix, workspaceChange);
+			result.push(Command.create(editInfo.label, CommandIds.applySingleFix));
+		};
+
+		if (result.length > 0) {
+			let same: AutoFix[] = [];
+			let all: AutoFix[] = [];
+
+
+			for (let editInfo of fixes.getAllSorted()) {
+				if (documentVersion === -1) {
+					documentVersion = editInfo.documentVersion;
+				}
+				if (editInfo.ruleId === ruleId && !Fixes.overlaps(getLastEdit(same), editInfo)) {
+					same.push(editInfo);
+				}
+				if (!Fixes.overlaps(getLastEdit(all), editInfo)) {
+					all.push(editInfo);
+				}
+			}
+			if (same.length > 1) {
+				let sameFixes: WorkspaceChange = new WorkspaceChange();
+				let sameTextChange = sameFixes.getTextEditChange({uri, version: documentVersion});
+				same.map(createTextEdit).forEach(edit => sameTextChange.add(edit));
+				this.codeActionCommands.set(CommandIds.applySameFixes, sameFixes);
+				result.push(Command.create(`Fix all ${ruleId} problems`, CommandIds.applySameFixes));
+			}
+			if (all.length > 1) {
+				let allFixes: WorkspaceChange = new WorkspaceChange();
+				let allTextChange = allFixes.getTextEditChange({uri, version: documentVersion});
+				all.map(createTextEdit).forEach(edit => allTextChange.add(edit));
+				this.codeActionCommands.set(CommandIds.applyAllFixes, allFixes);
+				result.push(Command.create(`Fix all auto-fixable problems`, CommandIds.applyAllFixes));
+			}
+		}
+		return result;
+	}
+
+	private computeDisableRuleCommands(params: CodeActionParams): Command[] {
+		const result: Command[] = [];
+		const uri = params.textDocument.uri;
+
+		for (const diagnostic of params.context.diagnostics) {
+			if (diagnostic.code) {
+				result.push(Command.create(`Disable rule ${diagnostic.code} on this line`, CommandIds.disableRuleThisLine, uri, diagnostic));
+			}
+		}
+		return result;
 	}
 
 	private trace(message: string, verbose?: string): void {
