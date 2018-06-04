@@ -9,6 +9,8 @@ export interface ESLintAutoFixEdit {
 export interface ESLintProblem {
 	line: number;
 	column: number;
+	endLine?: number;
+	endColumn?: number;
 	severity: number;
 	ruleId: string;
 	message: string;

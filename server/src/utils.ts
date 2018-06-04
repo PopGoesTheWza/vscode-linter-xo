@@ -2,6 +2,7 @@ import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
 import { existsSync, readFileSync } from 'fs';
 import * as path from 'path';
 import pathIsInside = require('path-is-inside');
+import { ESLintProblem } from './fixes';
 
 function parseSeverity(severity: number): DiagnosticSeverity {
 	switch (severity) {
@@ -14,11 +15,13 @@ function parseSeverity(severity: number): DiagnosticSeverity {
 	}
 }
 
-export function makeDiagnostic(problem: any): Diagnostic {
+export function makeDiagnostic(problem: ESLintProblem): Diagnostic {
 	const message = (problem.ruleId != null)
 		? `${problem.message} (${problem.ruleId})`
 		: `${problem.message}`;
 
+	const endLine = problem.endLine != null ? problem.endLine : problem.line;
+	const endColumn = problem.endColumn != null ? problem.endColumn : problem.column;
 	return {
 		message,
 		severity: parseSeverity(problem.severity),
@@ -26,7 +29,7 @@ export function makeDiagnostic(problem: any): Diagnostic {
 		source: 'XO',
 		range: {
 			start: {line: problem.line - 1, character: problem.column - 1},
-			end: {line: problem.line - 1, character: problem.column - 1}
+			end: {line: endLine - 1, character: endColumn - 1}
 		}
 	};
 }
