@@ -2,7 +2,7 @@
   "name": "linter-xo-2",
   "displayName": "Linter XO",
   "description": "Integrates XO linter into VS Code.",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "author": {
     "name": "Bryan Chen",
     "url": "https://github.com/xlc"
